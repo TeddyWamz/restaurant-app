@@ -1,8 +1,9 @@
 
 "use client";
 
-import Navbar from "@/components/NavBar";
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
+import type { FormEvent } from "react";
+
 
 const menuItems = [
   {
@@ -50,6 +51,15 @@ export default function Order() {
   const [address, setAddress] = useState("");
   const [orderType, setOrderType] = useState("delivery");
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(
+    null
+  );
+  const [orders, setOrders] = useState<
+  { id: string; status: string }[]
+>([]);
+  
 
   const selectedItems = menuItems.filter(
     (item) => (quantities[item.id] ?? 0) > 0
@@ -78,16 +88,94 @@ export default function Order() {
     setOrderPlaced(false);
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  
 
-    if (selectedItems.length === 0) {
-      alert("Please select at least one meal.");
-      return;
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  event.preventDefault();
+
+  if (selectedItems.length === 0) {
+    setErrorMessage("Please select at least one meal.");
+    return;
+  }
+
+  if (submitting) return;
+
+  setSubmitting(true);
+  setErrorMessage("");
+  setOrderPlaced(false);
+
+  try {
+    const response = await fetch("/api/orders", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        customerName,
+        phone,
+        address: orderType === "delivery" ? address : null,
+        orderType,
+        items: selectedItems.map((item) => ({
+          id: item.id,
+          quantity: quantities[item.id],
+        })),
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        result.message || "Unable to save your order."
+      );
     }
 
     setOrderPlaced(true);
+  } catch (error) {
+    setErrorMessage(
+      error instanceof Error
+        ? error.message
+        : "Something went wrong. Please try again."
+    );
+  } finally {
+    setSubmitting(false);
   }
+}
+
+async function updateOrderStatus(id: string, status: string) {
+  setUpdatingOrderId(id);
+  setErrorMessage("");
+
+  try {
+    const response = await fetch("/api/orders", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ id, status }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.message || "Could not update order.");
+    }
+
+    setOrders((currentOrders) =>
+      currentOrders.map((order) =>
+        order.id === id ? { ...order, status } : order
+      )
+    );
+  } catch (error) {
+    setErrorMessage(
+      error instanceof Error
+        ? error.message
+        : "Something went wrong while updating the order."
+    );
+  } finally {
+    setUpdatingOrderId(null);
+  }
+}
 
   return (
     
@@ -305,13 +393,22 @@ export default function Order() {
             )}
 
             <button
-              type="submit"
-              disabled={selectedItems.length === 0}
-              className="w-full rounded-lg bg-orange-600 px-5 py-3 font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Submit Order
-            </button>
+             type="submit"
+             disabled={submitting}
+             className="w-full rounded-lg bg-orange-600 px-6 py-4 font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-60"
+           >
+             {submitting ? "Placing Order..." : "Place Order"}
+           </button>
           </form>
+
+          {errorMessage && (
+              <div
+                role="alert"
+                className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800"
+              >
+                {errorMessage}
+              </div>
+            )}
 
           {orderPlaced && (
             <div
@@ -344,3 +441,4 @@ export default function Order() {
     
   );
 }
+

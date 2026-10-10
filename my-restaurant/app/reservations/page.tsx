@@ -13,6 +13,8 @@ export default function ReservationsPage() {
   const [guests, setGuests] = useState("2");
   const [occasion, setOccasion] = useState("Regular Dining");
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+const [errorMessage, setErrorMessage] = useState("");
   const dateInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -27,11 +29,53 @@ export default function ReservationsPage() {
     ].join("-");
   }, []);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  
+async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  event.preventDefault();
+
+  setSubmitted(false);
+  setErrorMessage("");
+
+  if (submitting) return;
+
+  setSubmitting(true);
+
+  try {
+    const response = await fetch("/api/reservations", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name,
+        email,
+        phone,
+        date,
+        time,
+        guests,
+        occasion,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        result.message || "Unable to submit your reservation."
+      );
+    }
 
     setSubmitted(true);
+  } catch (error) {
+    setErrorMessage(
+      error instanceof Error
+        ? error.message
+        : "Something went wrong. Please try again."
+    );
+  } finally {
+    setSubmitting(false);
   }
+}
 
   return (
     
@@ -83,6 +127,7 @@ export default function ReservationsPage() {
                 onChange={(event) => {
                   setName(event.target.value);
                   setSubmitted(false);
+                  setErrorMessage("");
                 }}
                 placeholder="Enter your full name"
                 className="w-full rounded-lg border border-gray-300 text-gray-600 px-4 py-3 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
@@ -108,6 +153,7 @@ export default function ReservationsPage() {
                   onChange={(event) => {
                     setEmail(event.target.value);
                     setSubmitted(false);
+                    setErrorMessage("");
                   }}
                   placeholder="you@example.com"
                   className="w-full rounded-lg border border-gray-300 text-gray-600 px-4 py-3 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
@@ -131,6 +177,7 @@ export default function ReservationsPage() {
                   onChange={(event) => {
                     setPhone(event.target.value);
                     setSubmitted(false);
+                    setErrorMessage("");
                   }}
                   placeholder="e.g. 0712345678"
                   className="w-full rounded-lg border border-gray-300 text-gray-600 px-4 py-3 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
@@ -157,6 +204,7 @@ export default function ReservationsPage() {
                   onChange={(event) => {
                     setDate(event.target.value);
                     setSubmitted(false);
+                    setErrorMessage("");
                   }}
                   className="w-full rounded-lg border border-gray-300 text-gray-600 px-4 py-3 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
                 />
@@ -177,6 +225,7 @@ export default function ReservationsPage() {
                   onChange={(event) => {
                     setTime(event.target.value);
                     setSubmitted(false);
+                    setErrorMessage("");
                   }}
                   className="w-full rounded-lg border border-gray-300 text-gray-600 px-4 py-3 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
                 >
@@ -213,8 +262,9 @@ export default function ReservationsPage() {
                   onChange={(event) => {
                     setGuests(event.target.value);
                     setSubmitted(false);
+                    setErrorMessage("");
                   }}
-                  className="w-full rounded-lg border border-gray-300 text-gray-500 px-4 py-3 outline-none focus:border-orange-500"
+                  className="w-full rounded-lg border border-gray-300 text-gray-500 px-4 py-3 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
                 >
                   <option value="1">1 guest</option>
                   <option value="2">2 guests</option>
@@ -243,6 +293,7 @@ export default function ReservationsPage() {
                   onChange={(event) => {
                     setOccasion(event.target.value);
                     setSubmitted(false);
+                    setErrorMessage("");
                   }}
                   className="w-full rounded-lg border border-gray-300 text-gray-600 px-4 py-3 outline-none focus:border-orange-500"
                 >
@@ -258,11 +309,22 @@ export default function ReservationsPage() {
 
             <button
               type="submit"
-              className="w-full rounded-lg bg-orange-600 px-6 py-4 font-semibold text-white transition hover:bg-orange-700"
+              disabled={submitting}
+              className="w-full rounded-lg bg-orange-600 px-6 py-4 font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Request Reservation
+              {submitting ? "Submitting..." : "Request Reservation"}
             </button>
           </form>
+
+
+          {errorMessage && (
+            <div
+              role="alert"
+              className="mt-4 rounded-xl border border-red-200 bg-red-50 p-5 text-red-900"
+            >
+              <p className="text-sm">{errorMessage}</p>
+            </div>
+          )}
 
           {/* Confirmation */}
           {submitted && (
