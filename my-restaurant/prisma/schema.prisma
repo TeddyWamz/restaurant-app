@@ -24,6 +24,8 @@ model Reservation {
   guests          Int
   occasion        String   @default("Regular Dining")
   status          String   @default("PENDING")
+  referenceCode   String   @unique @default(cuid())
+  lookupCodeHash  String   @default("")
   createdAt       DateTime @default(now())
 }
 
@@ -35,6 +37,8 @@ model FoodOrder {
   orderType    String
   totalAmount  Int
   status       String          @default("PENDING")
+  referenceCode   String?         @unique
+  lookupCodeHash  String?
   items        FoodOrderItem[]
   createdAt    DateTime        @default(now())
 }
@@ -47,3 +51,4 @@ model FoodOrderItem {
   orderId  String
   order    FoodOrder @relation(fields: [orderId], references: [id],  onDelete: Cascade )
 }
+

@@ -1,8 +1,10 @@
+
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 
-// These prices are controlled by the server, not the browser.
+// Prices are controlled by the server, not the browser.
 const menuItems = [
   { id: 1, name: "Grilled Chicken", price: 850 },
   { id: 2, name: "Beef Burger", price: 650 },
@@ -17,6 +19,21 @@ type SubmittedItem = {
   quantity: number;
 };
 
+function hashLookupCode(code: string) {
+  return createHash("sha256").update(code).digest("hex");
+}
+
+function codesMatch(providedCode: string, storedHash: string) {
+  const providedHash = Buffer.from(hashLookupCode(providedCode), "hex");
+  const expectedHash = Buffer.from(storedHash, "hex");
+
+  return (
+    providedHash.length === expectedHash.length &&
+    timingSafeEqual(providedHash, expectedHash)
+  );
+}
+
+// PUBLIC: Create a new order.
 export async function POST(request: Request) {
   try {
     const body: unknown = await request.json();
@@ -29,13 +46,12 @@ export async function POST(request: Request) {
     }
 
     const data = body as Record<string, unknown>;
-
     const { customerName, phone, address, orderType, items } = data;
 
-    // Validate customer details.
     if (
       typeof customerName !== "string" ||
       !customerName.trim() ||
+      customerName.trim().length > 100 ||
       typeof phone !== "string" ||
       !phone.trim() ||
       phone.trim().length < 7 ||
@@ -47,7 +63,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate delivery or pickup.
     if (orderType !== "delivery" && orderType !== "pickup") {
       return NextResponse.json(
         { message: "Please choose delivery or pickup." },
@@ -57,15 +72,16 @@ export async function POST(request: Request) {
 
     if (
       orderType === "delivery" &&
-      (typeof address !== "string" || !address.trim())
+      (typeof address !== "string" ||
+        !address.trim() ||
+        address.trim().length > 500)
     ) {
       return NextResponse.json(
-        { message: "Please provide a delivery address." },
+        { message: "Please provide a valid delivery address." },
         { status: 400 }
       );
     }
 
-    // Validate the selected dishes.
     if (!Array.isArray(items) || items.length === 0 || items.length > 20) {
       return NextResponse.json(
         { message: "Please select at least one menu item." },
@@ -97,7 +113,6 @@ export async function POST(request: Request) {
         );
       }
 
-      // Prevent the same item from being submitted more than once.
       if (submittedItems.some((existing) => existing.id === item.id)) {
         return NextResponse.json(
           { message: "Please submit each menu item only once." },
@@ -111,7 +126,6 @@ export async function POST(request: Request) {
       });
     }
 
-    // Calculate the total using trusted server-side prices.
     const orderItems = submittedItems.map((item) => {
       const menuItem = menuItems.find(
         (menuItem) => menuItem.id === item.id
@@ -129,7 +143,11 @@ export async function POST(request: Request) {
       0
     );
 
-    // Save the order and its items together.
+    // Generate a public reference and a separate private lookup code.
+    const referenceCode = `ORD-${randomBytes(5).toString("hex").toUpperCase()}`;
+    const lookupCode = randomBytes(8).toString("hex").toUpperCase();
+    const lookupCodeHash = hashLookupCode(lookupCode);
+
     const order = await prisma.foodOrder.create({
       data: {
         customerName: customerName.trim(),
@@ -140,6 +158,8 @@ export async function POST(request: Request) {
             : null,
         orderType,
         totalAmount,
+        referenceCode,
+        lookupCodeHash,
         items: {
           create: orderItems,
         },
@@ -149,9 +169,14 @@ export async function POST(request: Request) {
       },
     });
 
+    // Return the private lookup code only when the order is first created.
     return NextResponse.json(
       {
         message: "Your order has been saved successfully.",
+        tracking: {
+          referenceCode,
+          lookupCode,
+        },
         order: {
           id: order.id,
           customerName: order.customerName,
@@ -173,30 +198,74 @@ export async function POST(request: Request) {
   }
 }
 
-
-export async function GET(request: Request) {
-  const auth = await requireAdmin(request);
-
-  if (auth.error) {
-    return auth.error;
-  }
-
+// PUBLIC: Look up an order using both tracking codes.
+export async function PUT(request: Request) {
   try {
-    const orders = await prisma.foodOrder.findMany({
+    const body: unknown = await request.json();
+
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return NextResponse.json(
+        { message: "Invalid tracking details." },
+        { status: 400 }
+      );
+    }
+
+    const data = body as Record<string, unknown>;
+    const { referenceCode, lookupCode } = data;
+
+    if (
+      typeof referenceCode !== "string" ||
+      !/^ORD-[A-F0-9]{10}$/.test(referenceCode.trim().toUpperCase()) ||
+      typeof lookupCode !== "string" ||
+      !/^[A-F0-9]{16}$/.test(lookupCode.trim().toUpperCase())
+    ) {
+      return NextResponse.json(
+        { message: "Enter a valid order reference and lookup code." },
+        { status: 400 }
+      );
+    }
+
+    const order = await prisma.foodOrder.findUnique({
+      where: {
+        referenceCode: referenceCode.trim().toUpperCase(),
+      },
       include: {
         items: true,
       },
-      orderBy: {
-        createdAt: "desc",
-      },
     });
 
-    return NextResponse.json({ orders });
+    if (
+      !order ||
+      !order.lookupCodeHash ||
+      !codesMatch(lookupCode.trim().toUpperCase(), order.lookupCodeHash)
+    ) {
+      return NextResponse.json(
+        { message: "Order not found. Check both tracking codes." },
+        { status: 404 }
+      );
+    }
+
+    // Do not reveal the customer's phone number or delivery address.
+    return NextResponse.json({
+      order: {
+        referenceCode: order.referenceCode,
+        customerName: order.customerName,
+        orderType: order.orderType,
+        totalAmount: order.totalAmount,
+        status: order.status,
+        items: order.items.map((item) => ({
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+        })),
+        createdAt: order.createdAt,
+      },
+    });
   } catch (error) {
-    console.error("Fetching orders failed:", error);
+    console.error("Order lookup failed:", error);
 
     return NextResponse.json(
-      { message: "Unable to retrieve orders." },
+      { message: "Unable to look up this order. Please try again." },
       { status: 500 }
     );
   }
@@ -210,12 +279,39 @@ const allowedStatuses = [
   "CANCELLED",
 ];
 
+// ADMIN ONLY: Retrieve all orders.
+export async function GET(request: Request) {
+  const auth = await requireAdmin(request);
+
+  if (auth.error) {
+    return auth.error;
+  }
+
+  try {
+    const orders = await prisma.foodOrder.findMany({
+      include: { items: true },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return NextResponse.json({ orders });
+  } catch (error) {
+    console.error("Fetching orders failed:", error);
+
+    return NextResponse.json(
+      { message: "Unable to retrieve orders." },
+      { status: 500 }
+    );
+  }
+}
+
+// ADMIN ONLY: Update an order's status.
 export async function PATCH(request: Request) {
   const auth = await requireAdmin(request);
 
   if (auth.error) {
     return auth.error;
   }
+
   try {
     const body: unknown = await request.json();
 

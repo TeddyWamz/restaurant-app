@@ -1,109 +1,199 @@
+// import Link from "next/link";
+
+// export default function Services() {
+//     return (
+//         <section className="bg-gray-50 px-6 py-20">
+//         <div className="mx-auto max-w-6xl">
+
+//           {/* Section Heading */}
+//           <div className="text-center">
+
+//             <p className="font-semibold uppercase tracking-widest text-orange-600">
+//               Our Services
+//             </p>
+
+//             <h2 className="mt-2 text-4xl font-bold">
+//               More Than Just Great Food
+//             </h2>
+
+//             <p className="mx-auto mt-4 max-w-2xl text-gray-600">
+//               Whether you want to dine with us, enjoy your meal from home,
+//               or reserve a table for a special occasion, we have got you covered.
+//             </p>
+
+//           </div>
+
+//           {/* Services */}
+//           <div className="mt-12 grid gap-8 md:grid-cols-3">
+
+//             {/* Delivery */}
+//             <div className="rounded-2xl border border-gray-100 bg-white p-8 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+
+//               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-orange-100 text-3xl">
+//                 🚚
+//               </div>
+
+//               <h3 className="mt-6 text-2xl font-bold">
+//                 Delivery
+//               </h3>
+
+//               <p className="mt-4 leading-7 text-gray-600">
+//                 Enjoy your favorite meals from the comfort of your home.
+//                 Place an order and we will take care of the rest.
+//               </p>
+
+//               <Link
+//                 href="/ordering"
+//                 className="mt-6 inline-block font-semibold text-orange-600 hover:text-orange-700"
+//               >
+//                 Order Now →
+//               </Link>
+
+//             </div>
+
+//             {/* Reservations */}
+//             <div className="rounded-2xl border border-gray-100 bg-white p-8 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+
+//               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-orange-100 text-3xl">
+//                 📅
+//               </div>
+
+//               <h3 className="mt-6 text-2xl font-bold">
+//                 Reservations
+//               </h3>
+
+//               <p className="mt-4 leading-7 text-gray-600">
+//                 Planning a special dinner? Reserve a table in advance and
+//                 let us prepare a memorable experience for you.
+//               </p>
+
+//               <Link
+//                 href="/reservations"
+//                 className="mt-6 inline-block font-semibold text-orange-600 hover:text-orange-700"
+//               >
+//                 Reserve a Table →
+//               </Link>
+
+//             </div>
+
+//             {/* Availability */}
+//             <div className="rounded-2xl border border-gray-100 bg-white p-8 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+
+//               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-orange-100 text-3xl">
+//                 🕐
+//               </div>
+
+//               <h3 className="mt-6 text-2xl font-bold">
+//                 Opening Hours
+//               </h3>
+
+//               <p className="mt-4 leading-7 text-gray-600">
+//                 Check our opening hours and plan your visit at a time that
+//                 works best for you.
+//               </p>
+
+//               <Link
+//                 href="/availability"
+//                 className="mt-6 inline-block font-semibold text-orange-600 hover:text-orange-700"
+//               >
+//                 Check Hours →
+//               </Link>
+
+//             </div>
+
+//           </div>
+
+//         </div>
+//       </section>
+//     );
+// }
+
 import Link from "next/link";
 
+const services = [
+  {
+    icon: "🚚",
+    title: "Delivery",
+    description:
+      "Enjoy your favorite meals from the comfort of your home. Place an order and we will take care of the rest.",
+    href: "/order",
+    cta: "Order Now",
+  },
+  {
+    icon: "📅",
+    title: "Reservations",
+    description:
+      "Planning a special dinner? Reserve a table in advance and let us prepare a memorable experience for you.",
+    href: "/reservations",
+    cta: "Reserve a Table",
+  },
+  {
+    icon: "🕐",
+    title: "Opening Hours",
+    description:
+      "Check our opening hours and plan your visit at a time that works best for you.",
+    href: "/availability",
+    cta: "Check Hours",
+  },
+];
+
 export default function Services() {
-    return (
-        <section className="bg-gray-50 px-6 py-20">
-        <div className="mx-auto max-w-6xl">
+  return (
+    <section id="services" className="bg-white px-6 py-20">
+      <div className="mx-auto max-w-6xl">
+        {/* Heading */}
+        <div className="text-center">
+          <p className="font-semibold uppercase tracking-widest text-orange-600">
+            Our Services
+          </p>
 
-          {/* Section Heading */}
-          <div className="text-center">
+          <h2 className="mt-2 text-3xl font-bold text-gray-900 sm:text-4xl">
+            More Than Just Great Food
+          </h2>
 
-            <p className="font-semibold uppercase tracking-widest text-orange-600">
-              Our Services
-            </p>
-
-            <h2 className="mt-2 text-4xl font-bold">
-              More Than Just Great Food
-            </h2>
-
-            <p className="mx-auto mt-4 max-w-2xl text-gray-600">
-              Whether you want to dine with us, enjoy your meal from home,
-              or reserve a table for a special occasion, we have got you covered.
-            </p>
-
-          </div>
-
-          {/* Services */}
-          <div className="mt-12 grid gap-8 md:grid-cols-3">
-
-            {/* Delivery */}
-            <div className="rounded-2xl border border-gray-100 bg-white p-8 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-orange-100 text-3xl">
-                🚚
-              </div>
-
-              <h3 className="mt-6 text-2xl font-bold">
-                Delivery
-              </h3>
-
-              <p className="mt-4 leading-7 text-gray-600">
-                Enjoy your favorite meals from the comfort of your home.
-                Place an order and we will take care of the rest.
-              </p>
-
-              <Link
-                href="/ordering"
-                className="mt-6 inline-block font-semibold text-orange-600 hover:text-orange-700"
-              >
-                Order Now →
-              </Link>
-
-            </div>
-
-            {/* Reservations */}
-            <div className="rounded-2xl border border-gray-100 bg-white p-8 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-orange-100 text-3xl">
-                📅
-              </div>
-
-              <h3 className="mt-6 text-2xl font-bold">
-                Reservations
-              </h3>
-
-              <p className="mt-4 leading-7 text-gray-600">
-                Planning a special dinner? Reserve a table in advance and
-                let us prepare a memorable experience for you.
-              </p>
-
-              <Link
-                href="/reservations"
-                className="mt-6 inline-block font-semibold text-orange-600 hover:text-orange-700"
-              >
-                Reserve a Table →
-              </Link>
-
-            </div>
-
-            {/* Availability */}
-            <div className="rounded-2xl border border-gray-100 bg-white p-8 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-orange-100 text-3xl">
-                🕐
-              </div>
-
-              <h3 className="mt-6 text-2xl font-bold">
-                Opening Hours
-              </h3>
-
-              <p className="mt-4 leading-7 text-gray-600">
-                Check our opening hours and plan your visit at a time that
-                works best for you.
-              </p>
-
-              <Link
-                href="/availability"
-                className="mt-6 inline-block font-semibold text-orange-600 hover:text-orange-700"
-              >
-                Check Hours →
-              </Link>
-
-            </div>
-
-          </div>
-
+          <p className="mx-auto mt-4 max-w-2xl text-gray-600">
+            Whether you want to dine with us, enjoy your meal from home, or
+            reserve a table for a special occasion, we have got you covered.
+          </p>
         </div>
-      </section>
-    );
+
+        {/* Services */}
+        <ul className="mt-12 grid gap-8 md:grid-cols-3">
+          {services.map((service) => (
+            <li key={service.title}>
+              <Link
+                href={service.href}
+                className="group flex h-full flex-col rounded-2xl border border-gray-100 bg-gray-50 p-8 text-center transition duration-300 hover:-translate-y-1 hover:border-orange-200 hover:bg-white hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
+              >
+                <div
+                  aria-hidden="true"
+                  className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-orange-100 text-3xl transition group-hover:scale-110 group-hover:bg-orange-200 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+                >
+                  {service.icon}
+                </div>
+
+                <h3 className="mt-6 text-2xl font-bold text-gray-900">
+                  {service.title}
+                </h3>
+
+                <p className="mt-4 flex-1 leading-7 text-gray-600">
+                  {service.description}
+                </p>
+
+                <span className="mt-6 inline-flex items-center justify-center gap-1 font-semibold text-orange-600 group-hover:text-orange-700">
+                  {service.cta}
+                  <span
+                    aria-hidden="true"
+                    className="transition-transform group-hover:translate-x-1 motion-reduce:transition-none"
+                  >
+                    →
+                  </span>
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
 }
